@@ -38,41 +38,40 @@ public class UserController {
 	@GetMapping("/users/{id}")
 	public EntityModel<User> retrieveUser(@PathVariable int id) {
 		User user = userDaoService.findOne(id);
-		
-		if(user==null) {
+
+		if (user == null) {
 			throw new UserNotFoundException("id-" + id);
 		}
-		
-		//"all-users", SERVER_PATH + "/users"
-		//retrieveAllUsers
+
+		// "all-users", SERVER_PATH + "/users"
+		// retrieveAllUsers
 		EntityModel<User> resource = EntityModel.of(user);
-		
-		WebMvcLinkBuilder linkTo =
-				linkTo(methodOn(this.getClass()).retrieveAllUsers());
-		
+
+		WebMvcLinkBuilder linkTo = linkTo(methodOn(this.getClass()).retrieveAllUsers());
+
 		resource.add(linkTo.withRel("all-users"));
-		
-		//HATEOAS
-		
+
+		// HATEOAS
+
 		return resource;
 	}
 
 	@PostMapping("/users")
 	public ResponseEntity<Object> CreateUser(@Valid @RequestBody User user) {
 		User savedUser = userDaoService.save(user);
-		
-		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(savedUser.getId()).toUri();
+
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(savedUser.getId())
+				.toUri();
 		return ResponseEntity.created(location).build();
 	}
-	
-	
+
 	@DeleteMapping("/users/{id}")
 	public void deleteUser(@PathVariable int id) {
 		User user = userDaoService.deleteById(id);
-		
-		if(user==null) {
+
+		if (user == null) {
 			throw new UserNotFoundException("id-" + id);
-		}		
-		
+		}
+
 	}
 }
