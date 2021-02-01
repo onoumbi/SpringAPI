@@ -1,7 +1,7 @@
 package com.training.blogger.blog.controllers;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 import java.net.URI;
 import java.util.List;
@@ -9,8 +9,8 @@ import java.util.List;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,52 +26,60 @@ import com.training.blogger.blog.repositories.UserDaoService;
 
 @RestController
 public class UserController {
-
+	
+	
 	@Autowired
-	UserDaoService userDaoService;
+	private UserDaoService service;
 
 	@GetMapping("/users")
 	public List<User> retrieveAllUsers() {
-		return userDaoService.findAll();
+		return service.findAll();
 	}
 
 	@GetMapping("/users/{id}")
-	public EntityModel<User> retrieveUser(@PathVariable int id) {
-		User user = userDaoService.findOne(id);
-
-		if (user == null) {
-			throw new UserNotFoundException("id-" + id);
-		}
-
-		// "all-users", SERVER_PATH + "/users"
-		// retrieveAllUsers
-		EntityModel<User> resource = EntityModel.of(user);
-
-		WebMvcLinkBuilder linkTo = linkTo(methodOn(this.getClass()).retrieveAllUsers());
-
+	public Resource<User> retrieveUser(@PathVariable int id) {
+		User user = service.findOne(id);
+		
+		if(user==null)
+			throw new UserNotFoundException("id-"+ id);
+		
+		Resource<User> resource = new Resource<User>(user);
+		
+		ControllerLinkBuilder linkTo = 
+				linkTo(methodOn(this.getClass()).retrieveAllUsers());
+		
 		resource.add(linkTo.withRel("all-users"));
-
-		// HATEOAS
-
+		
 		return resource;
-	}
-
-	@PostMapping("/users")
-	public ResponseEntity<Object> CreateUser(@Valid @RequestBody User user) {
-		User savedUser = userDaoService.save(user);
-
-		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(savedUser.getId())
-				.toUri();
-		return ResponseEntity.created(location).build();
 	}
 
 	@DeleteMapping("/users/{id}")
 	public void deleteUser(@PathVariable int id) {
-		User user = userDaoService.deleteById(id);
-
-		if (user == null) {
-			throw new UserNotFoundException("id-" + id);
-		}
-
+		User user = service.deleteById(id);
+		
+		if(user==null)
+			throw new UserNotFoundException("id-"+ id);		
 	}
+
+	//
+	// input - details of user
+	// output - CREATED & Return the created URI
+	
+	//HATEOAS
+	
+	@PostMapping("/users")
+	public ResponseEntity<Object> createUser(@Valid @RequestBody User user) {
+		User savedUser = service.save(user);
+		// CREATED
+		// /user/{id}     savedUser.getId()
+		
+		URI location = ServletUriComponentsBuilder
+			.fromCurrentRequest()
+			.path("/{id}")
+			.buildAndExpand(savedUser.getId()).toUri();
+		
+		return ResponseEntity.created(location).build();
+		
+	}
+
 }
